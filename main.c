@@ -37,12 +37,18 @@ char **split_line(char *line) {
     return tokens;
 }
 
+char *get_path(void) {
+    // Implement this function
+    // ...
+}
+
 int main(void) {
     char *line;
     char **args;
     size_t len = 0;
     pid_t child_pid;
     int status;
+    char *path;
 
     while (1) {
         printf("($) ");
@@ -54,10 +60,23 @@ int main(void) {
             continue;
         }
 
+        path = get_path();
         child_pid = fork();
         if (child_pid == 0) {
             // Child process
-            execvp(args[0], args);
+            char *full_path;
+            char *directories = strtok(path, ":");
+            while (directories != NULL) {
+                full_path = malloc(strlen(directories) + strlen(args[0]) + 2);
+                if (!full_path) {
+                    perror("Allocation error");
+                    exit(EXIT_FAILURE);
+                }
+                sprintf(full_path, "%s/%s", directories, args[0]);
+                execve(full_path, args, NULL);
+                free(full_path);
+                directories = strtok(NULL, ":");
+            }
             perror("Error");
             exit(EXIT_FAILURE);
         } else if (child_pid < 0) {
@@ -69,6 +88,7 @@ int main(void) {
 
         free(line);
         free(args);
+        free(path);
     }
 
     return 0;
